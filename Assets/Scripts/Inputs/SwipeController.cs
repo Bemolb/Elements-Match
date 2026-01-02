@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using Zenject;
+using static UnityEngine.InputSystem.InputAction;
 
 public class SwipeController : MonoBehaviour, ISwipeController
 {
@@ -17,23 +18,28 @@ public class SwipeController : MonoBehaviour, ISwipeController
     void Awake()
     {
         _controls = new Controls();
-        _controls.Gameplay.Press.started += ctx => StartDrag();
-        _controls.Gameplay.Press.canceled += ctx => EndDrag();
+        _controls.Gameplay.Press.started += StartDrag;
+        _controls.Gameplay.Press.canceled += EndDrag;
     }
 
-    private void StartDrag()
+    private void StartDrag(CallbackContext _)
     {
         _startPos = _controls.Gameplay.Position.ReadValue<Vector2>();
         _isDragging = true;
     }
 
-    private void EndDrag()
+    private void EndDrag(CallbackContext _)
     {
         if (!_isDragging) 
             return;
 
         if (Time.time - _lastSwipeTime < _gameConfig.SwipeCooldown)
+        {
+            Debug.Log("SwipeCooldown");
             return;
+        }
+
+        _lastSwipeTime = Time.time;
 
         var endPos = _controls.Gameplay.Position.ReadValue<Vector2>();
         var delta = endPos - _startPos;
@@ -60,8 +66,8 @@ public class SwipeController : MonoBehaviour, ISwipeController
     void OnDisable()
     {
         _controls.Disable();
-        _controls.Gameplay.Press.started -= ctx => StartDrag();
-        _controls.Gameplay.Press.canceled -= ctx => EndDrag();
+        _controls.Gameplay.Press.started -= StartDrag;
+        _controls.Gameplay.Press.canceled -= EndDrag;
     }
 
     void OnDestroy()
